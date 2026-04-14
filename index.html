@@ -12,8 +12,8 @@
         input, select, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
         button:hover { background: #2980b9; }
-        .secondary-btn { background: #95a5a6; }
         .danger-btn { background: #e74c3c; margin-top: 5px;}
+        .danger-btn:hover { background: #c0392b; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
         #canvas { position: relative; height: 100vh; width: calc(100% - 300px); float: left; overflow: auto; background: #ecf0f1; background-image: radial-gradient(#bdc3c7 1px, transparent 1px); background-size: 25px 25px; }
         #svg-layer { position: absolute; top: 0; left: 0; width: 2000px; height: 2000px; pointer-events: none; z-index: 1; }
@@ -25,7 +25,7 @@
 <body>
 
     <div id="controls">
-        <h2>🚀 Master Journey</h2>
+        <h2>🚀 Master Journey Syafiq</h2>
         
         <div class="form-group">
             <label><b>1. Tambah Box</b></label>
@@ -45,12 +45,7 @@
 
         <hr>
         
-        <label><b>Backup Data</b></label>
-        <button class="secondary-btn" onclick="exportData()">Download Backup (.json)</button>
-        <button class="secondary-btn" onclick="document.getElementById('fileInput').click()">Upload Backup</button>
-        <input type="file" id="fileInput" style="display:none" onchange="importData(event)">
-        
-        <button class="danger-btn" onclick="clearAll()">Reset Semua</button>
+        <button class="danger-btn" onclick="clearAll()">Reset Semua Data</button>
     </div>
 
     <div id="canvas">
@@ -65,33 +60,71 @@
     </div>
 
     <script>
+        // API Keys anda dah dimasukkan di sini
+        const BIN_ID = '69de0441856a68218930c74f'; 
+        const API_KEY = '$2a$10$0b8yyT7V8G.2TpH7BurUouore2OhQlFYeAQAqD5sispTqLR74gBuS';
+        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
         let nodes = [];
         let connections = [];
 
-        // Load data on start
-        window.onload = function() {
-            const savedNodes = localStorage.getItem('master_nodes');
-            const savedConns = localStorage.getItem('master_conns');
+        // Load data dari Cloud masa mula-mula buka
+        window.onload = async function() {
+            document.getElementById('controls').insertAdjacentHTML('afterbegin', '<p id="status" style="color: #e67e22; font-weight: bold; text-align: center; margin-top:0;">⏳ Loading data dari awan...</p>');
             
-            if (savedNodes) nodes = JSON.parse(savedNodes);
-            if (savedConns) connections = JSON.parse(savedConns);
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                const result = await response.json();
+                
+                if (result.record) {
+                    nodes = result.record.nodes || [];
+                    connections = result.record.connections || [];
+                }
+                document.getElementById('status').innerText = '✅ Data berjaya dimuat turun';
+                setTimeout(() => document.getElementById('status').remove(), 3000);
+            } catch (error) {
+                document.getElementById('status').innerText = '❌ Gagal load data. Sila refresh.';
+            }
             
             refreshUI();
         };
 
+        // Fungsi Simpan ke Cloud
+        async function saveToCloud() {
+            const btnText = document.querySelector('.danger-btn');
+            const originalText = btnText.innerText;
+            btnText.innerText = "⏳ Saving to Cloud...";
+            btnText.style.background = "#f39c12";
+            
+            try {
+                await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({ nodes, connections })
+                });
+                btnText.innerText = originalText;
+                btnText.style.background = "#e74c3c";
+            } catch (error) {
+                alert("Gagal simpan ke Cloud!");
+                btnText.innerText = originalText;
+                btnText.style.background = "#e74c3c";
+            }
+        }
+
         function addNode() {
             const name = document.getElementById('nodeName').value;
             const link = document.getElementById('nodeLink').value || '#';
-            if (!name) return alert("Letak tajuk dulu!");
+            if (!name) return alert("Sila letak tajuk box!");
 
-            nodes.push({
-                id: 'n' + Date.now(),
-                title: name,
-                link: link,
-                x: 100,
-                y: 100
-            });
-            saveAndRefresh();
+            nodes.push({ id: 'n' + Date.now(), title: name, link: link, x: 100, y: 100 });
+            refreshUI();
+            saveToCloud();
             document.getElementById('nodeName').value = '';
             document.getElementById('nodeLink').value = '';
         }
@@ -103,20 +136,16 @@
 
             if (!connections.some(c => c.from === from && c.to === to)) {
                 connections.push({ from, to });
-                saveAndRefresh();
+                refreshUI();
+                saveToCloud();
             }
         }
 
         function deleteNode(id) {
             nodes = nodes.filter(n => n.id !== id);
             connections = connections.filter(c => c.from !== id && c.to !== id);
-            saveAndRefresh();
-        }
-
-        function saveAndRefresh() {
-            localStorage.setItem('master_nodes', JSON.stringify(nodes));
-            localStorage.setItem('master_conns', JSON.stringify(connections));
             refreshUI();
+            saveToCloud();
         }
 
         function refreshUI() {
@@ -134,12 +163,14 @@
                 div.className = 'node';
                 div.style.left = node.x + 'px';
                 div.style.top = node.y + 'px';
+                
+                const linkHTML = node.link !== '#' ? `<a href="${node.link}" target="_blank" class="node-title">${node.title}</a>` : `<span class="node-title">${node.title}</span>`;
+                
                 div.innerHTML = `
                     <div class="delete-node" onclick="deleteNode('${node.id}')">×</div>
-                    <a href="${node.link}" target="_blank" class="node-title">${node.title}</a>
+                    ${linkHTML}
                 `;
 
-                // Simple Dragging
                 let isDragging = false;
                 div.onmousedown = (e) => {
                     if(e.target.className === 'delete-node' || e.target.tagName === 'A') return;
@@ -157,9 +188,11 @@
                     };
 
                     document.onmouseup = () => {
-                        isDragging = false;
-                        document.onmousemove = null;
-                        saveAndRefresh();
+                        if (isDragging) {
+                            isDragging = false;
+                            document.onmousemove = null;
+                            saveToCloud(); // Auto save bila lepaskan kotak
+                        }
                     };
                 };
                 canvas.appendChild(div);
@@ -193,31 +226,11 @@
             document.getElementById('toNode').innerHTML = html;
         }
 
-        function exportData() {
-            const data = JSON.stringify({ nodes, connections });
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'master_journey_backup.json';
-            a.click();
-        }
-
-        function importData(e) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const data = JSON.parse(event.target.result);
-                nodes = data.nodes;
-                connections = data.connections;
-                saveAndRefresh();
-            };
-            reader.readAsText(e.target.files[0]);
-        }
-
         function clearAll() {
-            if(confirm("Padam semua?")) {
+            if(confirm("AWAS! Ini akan padam semua data anda dari Cloud. Teruskan?")) {
                 nodes = []; connections = [];
-                saveAndRefresh();
+                refreshUI();
+                saveToCloud();
             }
         }
     </script>
