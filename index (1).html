@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Journey Syafiq</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a1f3c;
+            --accent: #4f6ef7;
+            --accent2: #7c3aed;
+            --bg: #0d1117;
+            --card: rgba(255,255,255,0.06);
+            --card-border: rgba(255,255,255,0.1);
+            --card-hover: rgba(255,255,255,0.1);
+            --text: #e2e8f0;
+            --muted: #8892a4;
+            --line: rgba(79,110,247,0.4);
+            --dot-bg: #0d1117;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated starfield background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse at 20% 20%, rgba(79,110,247,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Grid dot pattern */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: var(--peak); }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 60px 20px 50px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(79,110,247,0.15);
+            border: 1px solid rgba(79,110,247,0.3);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: #93a8f7;
+            letter-spacing: 0.5px;
+            margin-bottom: 24px;
+        }
+
+        .header-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #4f6ef7;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .header h1 {
+            margin: 0 0 12px;
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e2e8f0 30%, #93a8f7 70%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--muted);
+            margin: 0;
+            font-size: 15px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px 20px 60px;
+            z-index: 10;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--accent), var(--accent2), transparent);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+
+        .container {
+            padding: 10px 44px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .container::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            right: -7px;
+            background: var(--dot-bg);
+            border: 2.5px solid var(--accent);
+            top: 24px;
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: 0 0 10px rgba(79,110,247,0.5), 0 0 20px rgba(79,110,247,0.2);
+            transition: all 0.3s;
+        }
+
+        .container:hover::after {
+            border-color: #c084fc;
+            box-shadow: 0 0 14px rgba(192,132,252,0.6), 0 0 28px rgba(192,132,252,0.3);
+            transform: scale(1.3);
+        }
+
+        .left { left: 0; }
+        .right { left: 50%; }
+        .right::after { left: -7px; }
+
+        /* Number badge */
+        .num-badge {
+            position: absolute;
+            top: 18px;
+            right: 14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .right .num-badge { right: auto; left: 14px; }
+
+        /* Card */
+        .content {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(79,110,247,0.08) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .content:hover {
+            background: var(--card-hover);
+            border-color: rgba(79,110,247,0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(79,110,247,0.1);
+        }
+
+        .content:hover::before { opacity: 1; }
+
+        .content a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 20px;
+        }
+
+        .content-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            background: rgba(79,110,247,0.15);
+            border: 1px solid rgba(79,110,247,0.2);
+        }
+
+        .content-text h2 {
+            margin: 0 0 4px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            transition: color 0.2s;
+        }
+
+        .content:hover .content-text h2 { color: #93a8f7; }
+
+        .content-text span {
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .arrow-icon {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 16px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .content:hover .arrow-icon {
+            color: var(--accent);
+            transform: translateX(3px);
+        }
+
+        /* Progress line indicator */
+        .step-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(to right, var(--accent), var(--accent2));
+            width: 0%;
+            transition: width 0.4s;
+            border-radius: 0 0 14px 14px;
+        }
+
+        .content:hover .step-line { width: 100%; }
+
+        @media screen and (max-width: 600px) {
+            .timeline::after { left: 24px; }
+            .container { width: 100%; padding-left: 60px; padding-right: 16px; }
+            .left::after, .right::after { left: 17px; right: auto; }
+            .right { left: 0; }
+            .num-badge { right: 10px; left: auto; }
+            .right .num-badge { right: 10px; left: auto; }
+            .header h1 { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Stars -->
+    <div class="stars" id="stars"></div>
+
+    <div class="header">
+        <div class="header-badge">PhD Research Journey</div>
+        <h1>🚀 Master Journey Syafiq</h1>
+        <p>Klik pada kotak untuk buka dokumen berkaitan</p>
+    </div>
+
+    <div class="timeline" id="timeline-container"></div>
+
+    <script>
+        // Generate stars
+        const starsEl = document.getElementById('stars');
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 0.5;
+            star.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                --dur: ${2 + Math.random() * 4}s;
+                --peak: ${0.2 + Math.random() * 0.5};
+                animation-delay: ${Math.random() * 4}s;
+            `;
+            starsEl.appendChild(star);
+        }
+
+        const icons = ['📋', '⚖️', '🔬', '📊', '📈', '💾', '🗂️', '📚'];
+
+        const journeyData = [
+            { title: "Proposal", link: "https://drive.google.com/drive/folders/1c_KWDzHBbKROlaG18rgmJILRjT3f6V2i" },
+            { title: "Ethics", link: "https://drive.google.com/drive/folders/1-9vthjRo5LwMf1VbisqLRxuGRdBS297I" },
+            { title: "Scoping Review", link: "https://drive.google.com/drive/folders/1ub7LSgMaNb4KvqT4S4ytFMzsVnN4c_Wt" },
+            { title: "Pre-screening Survey", link: "https://cissurveyiium.netlify.app/" },
+            { title: "Data Collection Pre-screening", link: "https://docs.google.com/spreadsheets/d/1N4q_7J2Egwu1h1dbTTlpRCX0P3T3eh1zN8Agfn7Dq5k/edit?gid=0#gid=0" },
+            { title: "Data Collection", link: "https://drive.google.com/drive/folders/1-JoB89x_XEty15s85b3bIzEcM4jbDtzw" },
+            { title: "Patient Log", link: "https://drive.google.com/drive/folders/1ie6AhKFyIfHJB0TSwe6W4BHt5V30JYKM" },
+            { title: "Thesis", link: "https://drive.google.com/drive/folders/1cqGqWhateBG-kp8wsEceaE1q1xngKyij" }
+        ];
+
+        const container = document.getElementById('timeline-container');
+
+        journeyData.forEach((item, index) => {
+            const position = index % 2 === 0 ? 'left' : 'right';
+            const icon = icons[index] || '📁';
+            const num = index + 1;
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="container ${position}">
+                    <div class="content">
+                        <a href="${item.link}" target="_blank">
+                            <div class="content-icon">${icon}</div>
+                            <div class="content-text">
+                                <h2>${num}. ${item.title}</h2>
+                                <span>➜ Buka dokumen</span>
+                            </div>
+                            <div class="arrow-icon">→</div>
+                        </a>
+                        <div class="step-line"></div>
+                    </div>
+                </div>
+            `);
+        });
+    </script>
+
+</body>
+</html>
