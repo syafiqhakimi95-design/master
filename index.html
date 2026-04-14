@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Journey Syafiq</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow: hidden; }
+        
+        /* Sidebar Control Panel */
+        #controls { width: 300px; height: 100vh; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px; float: left; box-sizing: border-box; overflow-y: auto; z-index: 10; position: relative; }
+        h2 { color: #2c3e50; font-size: 20px; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        .danger-btn { background: #e74c3c; margin-top: 5px;}
+        .danger-btn:hover { background: #c0392b; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+
+        /* Canvas Area */
+        #canvas { position: relative; height: 100vh; width: calc(100% - 300px); float: left; overflow: auto; background: #ecf0f1; background-image: radial-gradient(#bdc3c7 1px, transparent 1px); background-size: 20px 20px; }
+        
+        /* SVG layer for arrows */
+        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        
+        /* Journey Boxes */
+        .node { position: absolute; background: white; border: 2px solid #3498db; border-radius: 8px; width: 150px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: grab; z-index: 2; user-select: none; }
+        .node:active { cursor: grabbing; }
+        .node-title { font-weight: bold; color: #2c3e50; text-align: center; display: block; text-decoration: none; word-wrap: break-word; }
+        .node-title:hover { color: #3498db; text-decoration: underline; }
+        .delete-node { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 18px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 3; }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <h2>🚀 Master Journey Syafiq</h2>
+        
+        <div class="form-group">
+            <label><b>1. Tambah Box Baru</b></label>
+            <input type="text" id="nodeName" placeholder="Cth: Proposal">
+            <input type="text" id="nodeLink" placeholder="Cth: https://drive.google.com/...">
+            <button onclick="addNode()">+ Tambah Box</button>
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+            <label><b>2. Sambung Anak Panah</b></label>
+            <select id="fromNode"><option value="">-- Start From --</option></select>
+            <select id="toNode"><option value="">-- Point To --</option></select>
+            <button onclick="addConnection()">➜ Lukis Panah</button>
+        </div>
+
+        <hr>
+        <button class="danger-btn" onclick="clearAll()">Reset Semua Data</button>
+    </div>
+
+    <div id="canvas">
+        <svg id="svg-layer">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50" />
+                </marker>
+            </defs>
+            <g id="lines-group"></g>
+        </svg>
+    </div>
+
+    <script>
+        // State variables
+        let nodes = JSON.parse(localStorage.getItem('journey_nodes')) || [];
+        let connections = JSON.parse(localStorage.getItem('journey_connections')) || [];
+
+        // DOM Elements
+        const canvas = document.getElementById('canvas');
+        const svgGroup = document.getElementById('lines-group');
+        const fromSelect = document.getElementById('fromNode');
+        const toSelect = document.getElementById('toNode');
+
+        // Dragging state
+        let isDragging = false;
+        let activeNode = null;
+        let offsetX, offsetY;
+
+        // Initialize App
+        function init() {
+            renderNodes();
+            renderConnections();
+            updateDropdowns();
+        }
+
+        // Add a new box (Node)
+        function addNode() {
+            const name = document.getElementById('nodeName').value;
+            const link = document.getElementById('nodeLink').value;
+            if (!name) return alert("Sila letak tajuk box!");
+
+            const newNode = {
+                id: 'node_' + Date.now(),
+                title: name,
+                link: link || '#',
+                x: 50 + Math.random() * 100, // Spawn letak random sikit
+                y: 50 + Math.random() * 100
+            };
+
+            nodes.push(newNode);
+            saveData();
+            document.getElementById('nodeName').value = '';
+            document.getElementById('nodeLink').value = '';
+            init();
+        }
+
+        // Add an arrow (Connection)
+        function addConnection() {
+            const fromId = fromSelect.value;
+            const toId = toSelect.value;
+            if (!fromId || !toId) return alert("Sila pilih kedua-dua box!");
+            if (fromId === toId) return alert("Tak boleh sambung ke box yang sama.");
+
+            // Check if connection already exists
+            const exists = connections.find(c => c.from === fromId && c.to === toId);
+            if (!exists) {
+                connections.push({ from: fromId, to: toId });
+                saveData();
+                init();
+            }
+        }
+
+        // Delete a box and its connected arrows
+        function deleteNode(id) {
+            nodes = nodes.filter(n => n.id !== id);
+            connections = connections.filter(c => c.from !== id && c.to !== id);
+            saveData();
+            init();
+        }
+
+        function clearAll() {
+            if(confirm("Confirm nak delete semua journey?")) {
+                nodes = [];
+                connections = [];
+                saveData();
+                init();
+            }
+        }
+
+        // Render boxes to canvas
+        function renderNodes() {
+            // Remove old nodes first
+            document.querySelectorAll('.node').forEach(el => el.remove());
+
+            nodes.forEach(node => {
+                const div = document.createElement('div');
+                div.className = 'node';
+                div.id = node.id;
+                div.style.left = node.x + 'px';
+                div.style.top = node.y + 'px';
+
+                // Title as link
+                const linkHTML = node.link !== '#' ? `<a href="${node.link}" target="_blank" class="node-title">${node.title}</a>` : `<span class="node-title">${node.title}</span>`;
+                
+                div.innerHTML = `
+                    <div class="delete-node" onclick="deleteNode('${node.id}')">X</div>
+                    ${linkHTML}
+                `;
+
+                // Dragging Logic
+                div.addEventListener('mousedown', (e) => {
+                    if (e.target.className === 'delete-node' || e.target.tagName === 'A') return;
+                    isDragging = true;
+                    activeNode = node;
+                    offsetX = e.clientX - node.x;
+                    offsetY = e.clientY - node.y;
+                });
+
+                canvas.appendChild(div);
+            });
+        }
+
+        // Handle Canvas mouse events for dragging
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || !activeNode) return;
+            activeNode.x = e.clientX - offsetX;
+            activeNode.y = e.clientY - offsetY;
+            
+            const el = document.getElementById(activeNode.id);
+            if(el) {
+                el.style.left = activeNode.x + 'px';
+                el.style.top = activeNode.y + 'px';
+            }
+            renderConnections(); // Redraw lines while moving
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                activeNode = null;
+                saveData(); // Save new positions
+            }
+        });
+
+        // Render SVG lines between boxes
+        function renderConnections() {
+            svgGroup.innerHTML = ''; // clear old lines
+            connections.forEach(conn => {
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const toNode = nodes.find(n => n.id === conn.to);
+                
+                if (fromNode && toNode) {
+                    // Calculate center points of the boxes
+                    const x1 = fromNode.x + 75; // 150/2 width
+                    const y1 = fromNode.y + 25; // approx center height
+                    const x2 = toNode.x + 75;
+                    const y2 = toNode.y + 25;
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', '#2c3e50');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('marker-end', 'url(#arrowhead)');
+                    svgGroup.appendChild(line);
+                }
+            });
+        }
+
+        // Update Start/End dropdowns
+        function updateDropdowns() {
+            let options = '<option value="">-- Pilih --</option>';
+            nodes.forEach(n => {
+                options += `<option value="${n.id}">${n.title}</option>`;
+            });
+            fromSelect.innerHTML = options;
+            toSelect.innerHTML = options;
+        }
+
+        function saveData() {
+            localStorage.setItem('journey_nodes', JSON.stringify(nodes));
+            localStorage.setItem('journey_connections', JSON.stringify(connections));
+        }
+
+        // Start everything
+        init();
+    </script>
+</body>
+</html>
