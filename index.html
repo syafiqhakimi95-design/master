@@ -5,234 +5,203 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Journey Syafiq</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; overflow: hidden; }
-        #controls { width: 300px; height: 100vh; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px; float: left; box-sizing: border-box; overflow-y: auto; z-index: 10; position: relative; }
-        h2 { color: #2c3e50; font-size: 20px; text-align: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        input, select, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:hover { background: #2980b9; }
-        .danger-btn { background: #e74c3c; margin-top: 5px;}
-        .danger-btn:hover { background: #c0392b; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
-        #canvas { position: relative; height: 100vh; width: calc(100% - 300px); float: left; overflow: auto; background: #ecf0f1; background-image: radial-gradient(#bdc3c7 1px, transparent 1px); background-size: 25px 25px; }
-        #svg-layer { position: absolute; top: 0; left: 0; width: 2000px; height: 2000px; pointer-events: none; z-index: 1; }
-        .node { position: absolute; background: white; border: 2px solid #3498db; border-radius: 8px; width: 150px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: grab; z-index: 2; user-select: none; }
-        .node-title { font-weight: bold; color: #2c3e50; text-align: center; display: block; text-decoration: none; word-wrap: break-word; font-size: 14px; }
-        .delete-node { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 20px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 3; border: 2px solid white; }
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --bg: #f4f7f6;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px 20px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        /* Timeline Container */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* The vertical line */
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: var(--secondary);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            border-radius: 2px;
+        }
+
+        /* Each Box Container */
+        .container {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        /* The dots on the line */
+        .container::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: white;
+            border: 4px solid var(--secondary);
+            top: 20px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .left { left: 0; }
+        .right { left: 50%; }
+
+        /* Fix dot position for right side */
+        .right::after { left: -10px; }
+
+        /* The Actual Box */
+        .content {
+            padding: 20px;
+            background-color: white;
+            position: relative;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+        }
+
+        .content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: var(--secondary);
+        }
+
+        .content h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .content a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+        }
+
+        /* Responsive - stack everything to the left on small screens */
+        @media screen and (max-width: 600px) {
+            .timeline::after { left: 31px; }
+            .container { width: 100%; padding-left: 70px; padding-right: 25px; }
+            .container::before { left: 60px; border: medium solid white; border-width: 10px 10px 10px 0; border-color: transparent white transparent transparent; }
+            .left::after, .right::after { left: 21px; }
+            .right { left: 0%; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <h2>🚀 Master Journey Syafiq</h2>
-        
-        <div class="form-group">
-            <label><b>1. Tambah Box</b></label>
-            <input type="text" id="nodeName" placeholder="Tajuk (Cth: Proposal)">
-            <input type="text" id="nodeLink" placeholder="Link Google Drive">
-            <button onclick="addNode()">+ Tambah</button>
-        </div>
-
-        <hr>
-
-        <div class="form-group">
-            <label><b>2. Sambung Arrow</b></label>
-            <select id="fromNode"></select>
-            <select id="toNode"></select>
-            <button onclick="addConnection()">➜ Lukis Panah</button>
-        </div>
-
-        <hr>
-        
-        <button class="danger-btn" onclick="clearAll()">Reset Semua Data</button>
+    <div class="header">
+        <h1>🚀 Master Journey Syafiq</h1>
+        <p>Klik pada kotak untuk buka dokumen berkaitan</p>
     </div>
 
-    <div id="canvas">
-        <svg id="svg-layer">
-            <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50" />
-                </marker>
-            </defs>
-            <g id="lines-group"></g>
-        </svg>
-    </div>
+    <div class="timeline" id="timeline-container">
+        </div>
 
     <script>
-        // API Keys anda dah dimasukkan di sini
-        const BIN_ID = '69de0441856a68218930c74f'; 
-        const API_KEY = '$2a$10$0b8yyT7V8G.2TpH7BurUouore2OhQlFYeAQAqD5sispTqLR74gBuS';
-        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+        // =========================================================================
+        // RUANGAN EDIT: TAMBAH / BUANG LINK DI SINI SAHAJA
+        // =========================================================================
+        // Cara nak tambah baru: Copy satu baris, paste kat bawah, tukar tajuk & link
+        
+        const journeyData = [
+            { 
+                title: "1. Proposal", 
+                link: "https://drive.google.com/drive/folders/1c_KWDzHBbKROlaG18rgmJILRjT3f6V2i" 
+            },
+            { 
+                title: "2. Ethics", 
+                link: "https://drive.google.com/drive/folders/1-9vthjRo5LwMf1VbisqLRxuGRdBS297I" 
+            },
+            { 
+                title: "3. Scoping Review", 
+                link: "https://drive.google.com/drive/folders/1ub7LSgMaNb4KvqT4S4ytFMzsVnN4c_Wt" 
+            },
+            { 
+                title: "4. Pre-screening Survey", 
+                link: "https://cissurveyiium.netlify.app/" 
+            },
+            { 
+                title: "5. Data Collection Pre-screening", 
+                link: "https://docs.google.com/spreadsheets/d/1N4q_7J2Egwu1h1dbTTlpRCX0P3T3eh1zN8Agfn7Dq5k/edit?gid=0#gid=0" 
+            },
+            { 
+                title: "6. Data Collection", 
+                link: "https://drive.google.com/drive/folders/1-JoB89x_XEty15s85b3bIzEcM4jbDtzw" 
+            },
+            { 
+                title: "7. Patient Log", 
+                link: "https://drive.google.com/drive/folders/1ie6AhKFyIfHJB0TSwe6W4BHt5V30JYKM" 
+            },
+            { 
+                title: "8. Thesis", 
+                link: "https://drive.google.com/drive/folders/1cqGqWhateBG-kp8wsEceaE1q1xngKyij" 
+            }
+        ];
 
-        let nodes = [];
-        let connections = [];
+        // =========================================================================
+        // JANGAN USIK KOD DI BAWAH (Sistem Auto-Generate Timeline)
+        // =========================================================================
 
-        // Load data dari Cloud masa mula-mula buka
-        window.onload = async function() {
-            document.getElementById('controls').insertAdjacentHTML('afterbegin', '<p id="status" style="color: #e67e22; font-weight: bold; text-align: center; margin-top:0;">⏳ Loading data dari awan...</p>');
+        const timelineContainer = document.getElementById('timeline-container');
+
+        journeyData.forEach((item, index) => {
+            // Tentukan posisi kiri atau kanan (berselang seli)
+            const position = index % 2 === 0 ? 'left' : 'right';
             
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'GET',
-                    headers: { 'X-Master-Key': API_KEY }
-                });
-                const result = await response.json();
-                
-                if (result.record) {
-                    nodes = result.record.nodes || [];
-                    connections = result.record.connections || [];
-                }
-                document.getElementById('status').innerText = '✅ Data berjaya dimuat turun';
-                setTimeout(() => document.getElementById('status').remove(), 3000);
-            } catch (error) {
-                document.getElementById('status').innerText = '❌ Gagal load data. Sila refresh.';
-            }
-            
-            refreshUI();
-        };
-
-        // Fungsi Simpan ke Cloud
-        async function saveToCloud() {
-            const btnText = document.querySelector('.danger-btn');
-            const originalText = btnText.innerText;
-            btnText.innerText = "⏳ Saving to Cloud...";
-            btnText.style.background = "#f39c12";
-            
-            try {
-                await fetch(API_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
-                    },
-                    body: JSON.stringify({ nodes, connections })
-                });
-                btnText.innerText = originalText;
-                btnText.style.background = "#e74c3c";
-            } catch (error) {
-                alert("Gagal simpan ke Cloud!");
-                btnText.innerText = originalText;
-                btnText.style.background = "#e74c3c";
-            }
-        }
-
-        function addNode() {
-            const name = document.getElementById('nodeName').value;
-            const link = document.getElementById('nodeLink').value || '#';
-            if (!name) return alert("Sila letak tajuk box!");
-
-            nodes.push({ id: 'n' + Date.now(), title: name, link: link, x: 100, y: 100 });
-            refreshUI();
-            saveToCloud();
-            document.getElementById('nodeName').value = '';
-            document.getElementById('nodeLink').value = '';
-        }
-
-        function addConnection() {
-            const from = document.getElementById('fromNode').value;
-            const to = document.getElementById('toNode').value;
-            if (!from || !to || from === to) return alert("Pilih dua box berbeza!");
-
-            if (!connections.some(c => c.from === from && c.to === to)) {
-                connections.push({ from, to });
-                refreshUI();
-                saveToCloud();
-            }
-        }
-
-        function deleteNode(id) {
-            nodes = nodes.filter(n => n.id !== id);
-            connections = connections.filter(c => c.from !== id && c.to !== id);
-            refreshUI();
-            saveToCloud();
-        }
-
-        function refreshUI() {
-            renderNodes();
-            renderConnections();
-            updateDropdowns();
-        }
-
-        function renderNodes() {
-            const canvas = document.getElementById('canvas');
-            document.querySelectorAll('.node').forEach(n => n.remove());
-
-            nodes.forEach(node => {
-                const div = document.createElement('div');
-                div.className = 'node';
-                div.style.left = node.x + 'px';
-                div.style.top = node.y + 'px';
-                
-                const linkHTML = node.link !== '#' ? `<a href="${node.link}" target="_blank" class="node-title">${node.title}</a>` : `<span class="node-title">${node.title}</span>`;
-                
-                div.innerHTML = `
-                    <div class="delete-node" onclick="deleteNode('${node.id}')">×</div>
-                    ${linkHTML}
-                `;
-
-                let isDragging = false;
-                div.onmousedown = (e) => {
-                    if(e.target.className === 'delete-node' || e.target.tagName === 'A') return;
-                    isDragging = true;
-                    let shiftX = e.clientX - div.getBoundingClientRect().left;
-                    let shiftY = e.clientY - div.getBoundingClientRect().top;
-
-                    document.onmousemove = (e) => {
-                        if (!isDragging) return;
-                        node.x = e.pageX - canvas.offsetLeft - shiftX;
-                        node.y = e.pageY - canvas.offsetTop - shiftY;
-                        div.style.left = node.x + 'px';
-                        div.style.top = node.y + 'px';
-                        renderConnections();
-                    };
-
-                    document.onmouseup = () => {
-                        if (isDragging) {
-                            isDragging = false;
-                            document.onmousemove = null;
-                            saveToCloud(); // Auto save bila lepaskan kotak
-                        }
-                    };
-                };
-                canvas.appendChild(div);
-            });
-        }
-
-        function renderConnections() {
-            const group = document.getElementById('lines-group');
-            group.innerHTML = '';
-            connections.forEach(c => {
-                const n1 = nodes.find(n => n.id === c.from);
-                const n2 = nodes.find(n => n.id === c.to);
-                if (n1 && n2) {
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', n1.x + 75);
-                    line.setAttribute('y1', n1.y + 25);
-                    line.setAttribute('x2', n2.x + 75);
-                    line.setAttribute('y2', n2.y + 25);
-                    line.setAttribute('stroke', '#2c3e50');
-                    line.setAttribute('stroke-width', '2');
-                    line.setAttribute('marker-end', 'url(#arrowhead)');
-                    group.appendChild(line);
-                }
-            });
-        }
-
-        function updateDropdowns() {
-            let html = '<option value="">-- Pilih --</option>';
-            nodes.forEach(n => html += `<option value="${n.id}">${n.title}</option>`);
-            document.getElementById('fromNode').innerHTML = html;
-            document.getElementById('toNode').innerHTML = html;
-        }
-
-        function clearAll() {
-            if(confirm("AWAS! Ini akan padam semua data anda dari Cloud. Teruskan?")) {
-                nodes = []; connections = [];
-                refreshUI();
-                saveToCloud();
-            }
-        }
+            const boxHTML = `
+                <div class="container ${position}">
+                    <div class="content">
+                        <a href="${item.link}" target="_blank">
+                            <h2>${item.title}</h2>
+                            <span style="color: #3498db; font-size: 14px; font-weight: bold;">➜ Buka Link</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+            timelineContainer.insertAdjacentHTML('beforeend', boxHTML);
+        });
     </script>
+
 </body>
 </html>
